@@ -1,17 +1,28 @@
-var createError = require("http-errors");
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
-const fetch = require("isomorphic-fetch");
-var indexRouter = require("./routes/index");
-var usersRouter = require("./routes/users");
+const createError = require("http-errors");
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
+const indexRouter = require("./routes/index");
+const usersRouter = require("./routes/users");
 const firebase = require("firebase/app");
+const cron = require("node-cron");
+const { getDolarPromedio } = require("./helpers/dolarpromedio.js");
+
+//const Tesseract = require("tesseract.js");
+// Add OCR later ?
+// Tesseract.recognize(
+//   "https://pbs.twimg.com/media/D22E_NQW0AA3Qxv.jpg",
+//   "eng",
+//   { logger: m => console.log(m) }
+// ).then(({ data: { text } }) => {
+//   console.log(text);
+// });
+
 require("firebase/firestore");
 require("dotenv").config();
-var cron = require("node-cron");
 
-var firebaseConfig = {
+const firebaseConfig = {
 	apiKey: `${process.env.APIKEY}`,
 	authDomain: `${process.env.AUTHDOMAIN}`,
 	databaseURL: `${process.env.DATABASEURL}`,
@@ -24,10 +35,7 @@ var firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 
-const db = firebase.firestore();
-const docRef = db.collection("documents");
-
-var app = express();
+const app = express();
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -40,57 +48,29 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", indexRouter);
-app.use("/users", usersRouter);
+//app.use("/users", usersRouter);
 
-cron.schedule("0 0 */2 * * *", async () => {
-	console.log(`task is running at ${new Date()} `);
-	const dolar = await fetch(
-		`https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=monitordolarvla&count=2`,
-		{
-			headers: {
-				Authorization: `Bearer ${process.env.BEARER_TOKEN}`,
-				"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8."
-			}
-		}
-	).then(r => r.json());
+const db = firebase.firestore();
+const dolarRef = db.collection("dolar-promedio");
 
-	var result = dolar
-		.filter((val, i) => {
-			return val.text
-				.toLowerCase()
-				.split(" ")
-				.includes("actualización");
-		})
-		.map(val => {
-			return {
-				value: val.text.toLowerCase().match(/(?<=bs\.\s)[0-9\s.,]+/g),
-				date: val.created_at
-			};
-		})
-		.reduce((acc, current, index) => {
-			if (current.value !== null) {
-				acc.push({
-					value: Number(
-						current.value[0]
-							.trim()
-							.replace(/\./g, "")
-							.replace(/,/g, ".")
-					),
-					date: current.date
-				});
-			}
+cron.schedule("0 0 */1 * * *", async () => {
+  console.log(`task is running at ${new Date()} `);
+  
+  const result = await getDolarPromedio();
 
-			return acc;
-		}, []);
-
-	if (result.length > 0) {
-		docRef.add(result[0]);
-	}
+  result.forEach(p => {
+		dolarRef.doc(p.id.toString()).set({
+			date: p.date,
+			value: p.value
+		});
+	});
+  
 });
 
 app.get("/api/dolarpromedio", async (req, res, next) => {
+
 	try {
-		const docs = await db.collection("documents").get();
+		const docs = await db.collection("dolar-promedio").get();
 		const docsArr = [];
 		docs.forEach(doc => {
 			docsArr.push(doc.data());
