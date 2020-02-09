@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "name": "dolar-promedio-api",
+  "routes": [{ "src": "/test", "status": 404, "dest": "/404" }],
+  "env": {
+    "BEARER_TOKEN": "@bearer-token",
+    "APIKEY": "@api-key",
+    "AUTHDOMAIN": "@auth-domain",
+    "DATABASEURL": "@db-url",
+    "PROJECTID": "@p-id",
+    "STORAGEBUCKET": "@bucket",
+    "MESSAGINGSENDERID": "@message-id",
+    "APPID": "@app-id",
+    "MEASUREMENTID": "@m-id"
+  }
+}
