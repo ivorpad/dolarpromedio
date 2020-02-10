@@ -3,7 +3,7 @@ const { unformat } = require("./unformat");
 
 const getDolarPromedio = async () => {
   const dolar = await fetch(
-  `https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=monitordolarvla`,
+  `https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=monitordolarvla&count=100`,
   {
     headers: {
       Authorization: `Bearer ${process.env.BEARER_TOKEN}`,
@@ -17,9 +17,6 @@ const result = dolar
     return unformat(val.text.toLowerCase()).includes("actualizacion")
   })
   .map(val => {
-
-    console.log(val);
-
     return {
       id: val.id,
       value: val.text.toLowerCase().match(/(?<=bs\.?\s)[0-9\s.,]+/g),

@@ -1,5 +1,6 @@
 const firebase = require("firebase/app");
 require("firebase/firestore");
+require("dotenv").config();
 
 const firebaseConfig = {
   apiKey: `${process.env.APIKEY}`,
@@ -12,6 +13,13 @@ const firebaseConfig = {
   measurementId: `${process.env.MEASUREMENTID}`
 };
 
+
 firebase.initializeApp(firebaseConfig);
 
-exports.db = firebase.firestore();
+const db = firebase.firestore();
+const dolarRef = db.collection("dolar-promedio");
+
+module.exports = {
+  db,
+  dolarRef
+};

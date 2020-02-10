@@ -1,4 +1,4 @@
-const { db } = require('../config/db')
+const { dolarRef } = require("../config/db");
 
 module.exports = async (req, res) => {
 
@@ -6,7 +6,7 @@ module.exports = async (req, res) => {
   show = Number(show);
 
   try {
-		const docs = await db.collection("dolar-promedio").get();
+		const docs = await dolarRef.get();
 		const docsArr = [];
 		docs.forEach(doc => {
 			docsArr.push(doc.data());
